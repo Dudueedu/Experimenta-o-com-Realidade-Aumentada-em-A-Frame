@@ -1,148 +1,451 @@
+ <!-- Integrantes do Grupo:
+# 1. Diogo Rafael de Campos Rodrigues
+# 2. Eduardo Salvador Itipão
+# 3. João Vitor Rodrigues Gotardi
+# 4. Pedro Henrique Severino -->
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>CRISTAL AR — Experiência Otimizada</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>COSMOS AR</title>
 
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
 
-  <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.5/aframe/build/aframe-ar.js"></script>
-
-  <script>
-    let clicks = 0;
-
-    AFRAME.registerComponent('ar-interacao', {
-      init: function () {
-        const el = this.el;
-        const cores = ['#00f5ff','#ff00cc','#ffd700','#00ff88','#ffffff'];
-        let ci = 0;
-
-        el.addEventListener('click', function () {
-          ci = (ci + 1) % cores.length;
-          clicks++;
-          document.getElementById('click-count').textContent = clicks;
-
-          // Muda cor do cristal e emanação
-          el.setAttribute('color', cores[ci]);
-          el.setAttribute('material', 'emissive', cores[ci]);
-
-          // Animação de Pulso de Escala
-          el.setAttribute('animation__pulse', {
-            property: 'scale',
-            from: '1 1 1',
-            to: '1.4 1.4 1.4',
-            dur: 200,
-            dir: 'alternate',
-            loop: 1,
-            easing: 'easeOutQuad'
-          });
-
-          showToast('✦ ARTEFATO ATIVADO ✦');
-        });
-      }
-    });
-  </script>
+  <!-- versões estáveis e testadas -->
+  <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
 
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root { --cyan: #00f5ff; --gold: #ffd700; --dark: #020010; }
-    body { font-family: sans-serif; background: var(--dark); color: white; overflow: hidden; }
 
-    /* HUD Basico */
-    #hud { position: fixed; inset: 0; z-index: 100; pointer-events: none; }
-
-    #status-bar {
-      position: absolute; top: 15px; left: 50%; transform: translateX(-50%);
-      display: flex; align-items: center; gap: 10px;
-      background: rgba(0,0,0,0.85); border: 1px solid rgba(255,255,255,0.2);
-      border-radius: 20px; padding: 8px 18px; backdrop-filter: blur(5px);
+    :root {
+      --azul:    #0af;
+      --laranja: #f70;
+      --roxo:    #c4f;
+      --verde:   #0f9;
+      --escuro:  #000814;
     }
-    .dot { width: 12px; height: 12px; border-radius: 50%; background: #ff4444; transition: 0.3s; box-shadow: 0 0 5px #ff4444; }
-    .dot.active { background: #00ff88; box-shadow: 0 0 12px #00ff88; }
-    #status-text { font-family: 'Orbitron', sans-serif; font-size: 0.7rem; letter-spacing: 0.1em; color: white; font-weight: bold; }
 
-    #counter {
-      position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%); font-family: 'Orbitron', sans-serif;
-      font-size: 0.7rem; font-weight: bold; letter-spacing: 0.1em; color: white;
-      background: rgba(0,0,0,0.8); border: 1px solid rgba(255,255,255,0.2);
-      border-radius: 20px; padding: 8px 16px; pointer-events: auto;
+    html, body {
+      width: 100%; height: 100%;
+      overflow: hidden;
+      font-family: 'JetBrains Mono', monospace;
+      background: var(--escuro);
+      color: var(--azul);
     }
+
+    /* ── cena AR ocupa toda a tela ── */
+    a-scene {
+      position: fixed !important;
+      top: 0; left: 0;
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    /* ── SPLASH ── */
+    #splash {
+      position: fixed; inset: 0; z-index: 9999;
+      background: var(--escuro);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 1.6rem;
+      transition: opacity 0.7s;
+    }
+    #splash.out { opacity: 0; pointer-events: none; }
+
+    .logo {
+      font-family: 'Exo 2', sans-serif;
+      font-weight: 900;
+      font-size: clamp(2.8rem, 10vw, 5rem);
+      letter-spacing: 0.12em;
+      background: linear-gradient(120deg, #0af 0%, #c4f 50%, #f70 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: pulse 2s ease-in-out infinite alternate;
+    }
+    @keyframes pulse {
+      from { filter: drop-shadow(0 0 6px #0af); }
+      to   { filter: drop-shadow(0 0 22px #c4f); }
+    }
+
+    .tagline {
+      font-size: 0.7rem;
+      letter-spacing: 0.35em;
+      color: rgba(0,170,255,0.5);
+      text-transform: uppercase;
+    }
+
+    .marker-hint {
+      display: flex; flex-direction: column; align-items: center; gap: 1rem;
+      margin-top: 0.5rem;
+    }
+
+    /* quadrado animado representando o marcador */
+    .marker-box {
+      width: 110px; height: 110px;
+      border: 3px solid rgba(0,170,255,0.4);
+      border-radius: 8px;
+      position: relative;
+      display: flex; align-items: center; justify-content: center;
+      animation: scanPulse 1.8s ease-in-out infinite;
+    }
+    @keyframes scanPulse {
+      0%, 100% { border-color: rgba(0,170,255,0.3); box-shadow: inset 0 0 0 rgba(0,170,255,0); }
+      50%       { border-color: rgba(0,170,255,0.9); box-shadow: inset 0 0 20px rgba(0,170,255,0.15); }
+    }
+    .marker-box::before,
+    .marker-box::after {
+      content: '';
+      position: absolute;
+      width: 28px; height: 28px;
+      border-color: var(--azul);
+      border-style: solid;
+    }
+    .marker-box::before { top: -3px; left: -3px; border-width: 3px 0 0 3px; border-radius: 6px 0 0 0; }
+    .marker-box::after  { bottom: -3px; right: -3px; border-width: 0 3px 3px 0; border-radius: 0 0 6px 0; }
+
+    /* imagem do marcador Hiro dentro da caixa */
+    .marker-img {
+      width: 80px; height: 80px;
+      object-fit: contain;
+      opacity: 0.85;
+      filter: invert(1) sepia(1) saturate(4) hue-rotate(175deg);
+    }
+
+    .hint-text {
+      font-size: 0.62rem;
+      letter-spacing: 0.2em;
+      color: rgba(0,170,255,0.6);
+      text-align: center;
+    }
+
+    .bar-wrap {
+      width: 200px; height: 2px;
+      background: rgba(0,170,255,0.12);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #0af, #c4f);
+      animation: load 2.8s ease forwards;
+    }
+    @keyframes load { from { width: 0; } to { width: 100%; } }
+
+    /* ── HUD ── */
+    #hud {
+      position: fixed; inset: 0; z-index: 100;
+      pointer-events: none;
+    }
+
+    /* cantos */
+    .c { position: absolute; width: 32px; height: 32px; border-color: rgba(0,170,255,0.55); border-style: solid; }
+    .c.tl { top: 14px; left: 14px; border-width: 2px 0 0 2px; border-radius: 4px 0 0 0; }
+    .c.tr { top: 14px; right: 14px; border-width: 2px 2px 0 0; border-radius: 0 4px 0 0; }
+    .c.bl { bottom: 14px; left: 14px; border-width: 0 0 2px 2px; border-radius: 0 0 0 4px; }
+    .c.br { bottom: 14px; right: 14px; border-width: 0 2px 2px 0; border-radius: 0 0 4px 0; }
+
+    #status {
+      position: absolute;
+      top: 22px; left: 50%; transform: translateX(-50%);
+      background: rgba(0,0,0,0.55);
+      border: 1px solid rgba(0,170,255,0.25);
+      border-radius: 30px;
+      padding: 5px 20px;
+      font-size: 0.58rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      backdrop-filter: blur(8px);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .led {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--azul);
+      animation: blink 1.1s step-start infinite;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    #info-panel {
+      position: absolute;
+      top: 50%; left: 16px; transform: translateY(-50%);
+      background: rgba(0,0,0,0.6);
+      border: 1px solid rgba(0,170,255,0.2);
+      border-radius: 14px;
+      padding: 14px 12px;
+      backdrop-filter: blur(10px);
+      min-width: 130px;
+      transition: all 0.3s;
+      display: none;
+    }
+    #info-panel.visible { display: block; }
+    #info-nome {
+      font-family: 'Exo 2', sans-serif;
+      font-weight: 700;
+      font-size: 1rem;
+      margin-bottom: 6px;
+      color: var(--azul);
+    }
+    #info-desc { font-size: 0.58rem; line-height: 1.7; color: rgba(255,255,255,0.7); }
 
     #toast {
-      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      font-family: 'Orbitron', sans-serif; font-size: 1.2rem; font-weight: 900;
-      letter-spacing: 0.2em; color: var(--gold); pointer-events: none; opacity: 0;
-      text-shadow: 0 0 15px var(--gold);
+      position: absolute;
+      top: 45%; left: 50%; transform: translate(-50%, -50%);
+      font-family: 'Exo 2', sans-serif;
+      font-weight: 700;
+      font-size: clamp(1rem, 4vw, 1.4rem);
+      letter-spacing: 0.2em;
+      pointer-events: none;
+      opacity: 0;
     }
-    #toast.show { animation: toastAnim 1.2s ease forwards; }
-    @keyframes toastAnim {
-      0%   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-      50%  { opacity: 1; transform: translate(-50%, -70%) scale(1.1); }
-      100% { opacity: 0; transform: translate(-50%, -100%) scale(0.9); }
-    }
-
-    /* Nova Seta de Ajuda em CSS (Mais garantida que no 3D) */
-    #css-help-arrow {
-      position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%);
-      font-size: 3rem; color: var(--cyan);
-      opacity: 1; transition: opacity 0.5s;
-      animation: arrowBounce 1s infinite;
-      display: block; /* Visivel por padrão */
-    }
-    @keyframes arrowBounce {
-      0%, 100% { transform: translateX(-50%) translateY(0); }
-      50% { transform: translateX(-50%) translateY(-15px); }
+    #toast.show { animation: toastUp 1.1s ease forwards; }
+    @keyframes toastUp {
+      0%   { opacity: 1; transform: translate(-50%, -50%) scale(0.9); }
+      55%  { opacity: 1; transform: translate(-50%, -75%) scale(1.05); }
+      100% { opacity: 0; transform: translate(-50%, -110%) scale(0.95); }
     }
 
-    a-scene { position: fixed; inset: 0; z-index: 1; }
+    #cliques {
+      position: absolute;
+      top: 22px; right: 16px;
+      background: rgba(0,0,0,0.5);
+      border: 1px solid rgba(0,170,255,0.2);
+      border-radius: 30px;
+      padding: 5px 16px;
+      font-size: 0.58rem;
+      letter-spacing: 0.18em;
+      backdrop-filter: blur(8px);
+    }
+
+    #instrucoes {
+      position: absolute;
+      bottom: 22px; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 8px;
+      pointer-events: auto;
+    }
+    .inst {
+      background: rgba(0,0,0,0.55);
+      border: 1px solid rgba(0,170,255,0.2);
+      border-radius: 12px;
+      padding: 9px 12px;
+      text-align: center;
+      backdrop-filter: blur(8px);
+      min-width: 72px;
+    }
+    .inst-i { font-size: 1.3rem; display: block; margin-bottom: 3px; }
+    .inst-l { font-size: 0.5rem; letter-spacing: 0.1em; color: rgba(0,170,255,0.65); text-transform: uppercase; line-height: 1.5; }
+
+    /* scanlines sutis */
+    #scan {
+      position: fixed; inset: 0; z-index: 50;
+      background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.04) 3px, rgba(0,0,0,0.04) 4px);
+      pointer-events: none;
+    }
   </style>
 </head>
 <body>
 
-<div id="hud">
-  <div id="status-bar">
-    <div id="status-dot" class="dot"></div>
-    <div id="status-text">CÂMERA ATIVA - PROCURE O OBJETO</div>
+<!-- SPLASH -->
+<div id="splash">
+  <div class="logo">COSMOS AR</div>
+  <div class="tagline">Sistema Solar Interativo</div>
+  <div class="marker-hint">
+    <div class="marker-box">
+      <!-- SVG inline do marcador Hiro simplificado para referência visual -->
+      <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="8" y="8" width="64" height="64" fill="white"/>
+        <rect x="16" y="16" width="48" height="48" fill="black"/>
+        <rect x="24" y="24" width="32" height="32" fill="white"/>
+        <rect x="32" y="32" width="16" height="16" fill="black"/>
+        <rect x="16" y="16" width="12" height="12" fill="white"/>
+        <rect x="52" y="16" width="12" height="12" fill="white"/>
+        <rect x="16" y="52" width="12" height="12" fill="white"/>
+        <rect x="20" y="20" width="4" height="4" fill="black"/>
+        <rect x="56" y="20" width="4" height="4" fill="black"/>
+        <rect x="20" y="56" width="4" height="4" fill="black"/>
+      </svg>
+    </div>
+    <div class="hint-text">Aponte para o marcador<br><strong>HIRO</strong> para iniciar</div>
   </div>
-
-  <div id="toast"></div>
-
-  <div id="css-help-arrow">⬇️</div>
-
-  <div id="counter">CLIQUES NO CRISTAL: <span id="click-count">0</span></div>
+  <div class="bar-wrap"><div class="bar-fill"></div></div>
 </div>
 
+<div id="scan"></div>
+
+<!-- HUD -->
+<div id="hud">
+  <div class="c tl"></div><div class="c tr"></div>
+  <div class="c bl"></div><div class="c br"></div>
+
+  <div id="status"><div class="led"></div><span id="status-txt">AGUARDANDO MARCADOR</span></div>
+  <div id="cliques">TOQUES: <span id="n-cliques">0</span></div>
+  <div id="toast"></div>
+
+  <div id="info-panel">
+    <div id="info-nome">—</div>
+    <div id="info-desc">—</div>
+  </div>
+
+  <div id="instrucoes">
+    <div class="inst"><span class="inst-i">🎯</span><span class="inst-l">Marcador<br>HIRO</span></div>
+    <div class="inst"><span class="inst-i">👆</span><span class="inst-l">Toque nos<br>planetas</span></div>
+    <div class="inst"><span class="inst-i">🪐</span><span class="inst-l">Descubra<br>o sistema</span></div>
+  </div>
+</div>
+
+<!-- CENA AR -->
 <a-scene
   embedded
-  renderer="colorManagement: true; sortObjects: true;"
-  arjs="sourceType: webcam; debugUIEnabled: false; trackingMethod: best;"
-  cursor="rayOrigin: mouse; fuse: false;"
-  raycaster="objects: .clicavel"
-  vr-mode-ui="enabled: false">
+  arjs="sourceType: webcam; debugUIEnabled: false; trackingMethod: best; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
+  cursor="rayOrigin: mouse"
+  raycaster="objects: .planeta"
+  renderer="antialias: true; alpha: true"
+  vr-mode-ui="enabled: false"
+  style="width:100%;height:100vh;">
 
-  <a-marker preset="hiro" id="marcador-objeto">
+  <a-assets>
+    <!-- cores como materiais nomeados -->
+    <a-mixin id="brilho-azul"   material="color:#0af; emissive:#0af; emissiveIntensity:0.4; roughness:0.2; metalness:0.6"></a-mixin>
+    <a-mixin id="brilho-laranja" material="color:#f70; emissive:#f70; emissiveIntensity:0.5; roughness:0.3; metalness:0.5"></a-mixin>
+    <a-mixin id="brilho-verde"  material="color:#0f9; emissive:#0f9; emissiveIntensity:0.4; roughness:0.25; metalness:0.55"></a-mixin>
+    <a-mixin id="brilho-roxo"   material="color:#c4f; emissive:#c4f; emissiveIntensity:0.4; roughness:0.2; metalness:0.6"></a-mixin>
+    <a-mixin id="brilho-amarelo" material="color:#ff0; emissive:#ff0; emissiveIntensity:0.5; roughness:0.1; metalness:0.7"></a-mixin>
+    <a-mixin id="brilho-vermelho" material="color:#f44; emissive:#f44; emissiveIntensity:0.45; roughness:0.3; metalness:0.5"></a-mixin>
+  </a-assets>
 
-    <a-light type="ambient" color="#BBB"></a-light>
-    <a-light type="directional" color="#FFF" intensity="0.6" position="-1 1 1"></a-light>
+  <a-marker preset="hiro" id="marker">
 
-    <a-dodecahedron
-      id="cristal"
-      class="clicavel"
-      ar-interacao
-      position="0 0.7 0"
-      radius="0.5"
-      color="#00f5ff"
-      material="roughness: 0.2; metalness: 0.4; emissive: #002233; emissiveIntensity: 0.5"
-      animation="property: rotation; to: 0 360 360; loop: true; dur: 8000; easing: linear">
-    </a-dodecahedron>
+    <!-- ★ SOL central ★ -->
+    <a-sphere
+      id="sol"
+      class="planeta"
+      position="0 1.0 0"
+      radius="0.28"
+      mixin="brilho-amarelo"
+      animation="property:rotation; to:0 360 0; loop:true; dur:5000; easing:linear">
+    </a-sphere>
 
-    <a-sphere position="0 0.7 0" radius="0.55" color="#00f5ff" opacity="0.1" material="side: back"
-      animation="property: scale; to: 1.1 1.1 1.1; loop: true; dir: alternate; dur: 2000; easing: easeInOutSine">
-    </ sphere>
+    <!-- corona do sol (esfera glow maior semitransparente) -->
+    <a-sphere position="0 1.0 0" radius="0.36" color="#ff0"
+      material="opacity:0.12; transparent:true; emissive:#ff0; emissiveIntensity:1; side:back"
+      animation="property:scale; to:1.12 1.12 1.12; loop:true; dur:1600; dir:alternate; easing:easeInOutSine">
+    </a-sphere>
 
-    <a-cylinder position="0 0.05 0" radius="0.8" height="0.1" color="#111" material="metalness: 0.9"></a-cylinder>
+    <!-- ── MERCÚRIO ── raio órbita 0.55 -->
+    <a-entity id="orb-mercurio" position="0 1.0 0"
+      animation="property:rotation; to:0 360 0; loop:true; dur:2500; easing:linear">
+      <a-sphere class="planeta" id="mercurio" position="0.55 0 0" radius="0.07"
+        material="color:#aaa; emissive:#888; emissiveIntensity:0.3; roughness:0.5; metalness:0.6">
+      </a-sphere>
+    </a-entity>
+
+    <!-- ── VÊNUS ── raio 0.75 -->
+    <a-entity id="orb-venus" position="0 1.0 0"
+      animation="property:rotation; to:0 360 0; loop:true; dur:3800; easing:linear">
+      <a-sphere class="planeta" id="venus" position="0.75 0 0" radius="0.1"
+        mixin="brilho-laranja">
+      </a-sphere>
+    </a-entity>
+
+    <!-- ── TERRA ── raio 1.0 -->
+    <a-entity id="orb-terra" position="0 1.0 0"
+      animation="property:rotation; to:0 360 0; loop:true; dur:5500; easing:linear">
+      <a-sphere class="planeta" id="terra" position="1.0 0 0" radius="0.11"
+        mixin="brilho-azul">
+      </a-sphere>
+      <!-- Lua -->
+      <a-entity position="1.0 0 0"
+        animation="property:rotation; to:0 360 0; loop:true; dur:1400; easing:linear">
+        <a-sphere position="0.2 0 0" radius="0.035"
+          material="color:#ccc; emissive:#aaa; emissiveIntensity:0.2; roughness:0.8">
+        </a-sphere>
+      </a-entity>
+    </a-entity>
+
+    <!-- ── MARTE ── raio 1.3 -->
+    <a-entity id="orb-marte" position="0 1.0 0"
+      animation="property:rotation; to:0 360 0; loop:true; dur:8200; easing:linear">
+      <a-sphere class="planeta" id="marte" position="1.3 0 0" radius="0.09"
+        mixin="brilho-vermelho">
+      </a-sphere>
+    </a-entity>
+
+    <!-- ── JÚPITER ── raio 1.65, tem anéis -->
+    <a-entity id="orb-jupiter" position="0 1.0 0"
+      animation="property:rotation; to:0 360 0; loop:true; dur:14000; easing:linear">
+      <a-sphere class="planeta" id="jupiter" position="1.65 0 0" radius="0.19"
+        material="color:#c8a060; emissive:#a07030; emissiveIntensity:0.35; roughness:0.4; metalness:0.4">
+      </a-sphere>
+      <!-- Faixas de Júpiter (anéis horizontais) -->
+      <a-ring position="1.65 0 0" rotation="90 0 0"
+        radius-inner="0.20" radius-outer="0.21"
+        material="color:#a07030; opacity:0.6; transparent:true; emissive:#a07030; emissiveIntensity:0.5">
+      </a-ring>
+    </a-entity>
+
+    <!-- ── SATURNO ── raio 2.05, com anéis prominentes -->
+    <a-entity id="orb-saturno" position="0 1.0 0"
+      animation="property:rotation; to:0 360 0; loop:true; dur:20000; easing:linear">
+      <a-sphere class="planeta" id="saturno" position="2.05 0 0" radius="0.16"
+        material="color:#e8c87c; emissive:#b09040; emissiveIntensity:0.35; roughness:0.35; metalness:0.45">
+      </a-sphere>
+      <!-- anel interno -->
+      <a-ring position="2.05 0.015 0" rotation="80 0 0"
+        radius-inner="0.19" radius-outer="0.30"
+        material="color:#e8c87c; opacity:0.55; transparent:true; emissive:#b09040; emissiveIntensity:0.3"
+        animation="property:rotation; to:440 0 0; loop:true; dur:12000; easing:linear">
+      </a-ring>
+      <!-- anel externo -->
+      <a-ring position="2.05 0.015 0" rotation="80 10 0"
+        radius-inner="0.31" radius-outer="0.40"
+        material="color:#c8a050; opacity:0.3; transparent:true; emissive:#906020; emissiveIntensity:0.2"
+        animation="property:rotation; to:440 10 0; loop:true; dur:12000; easing:linear">
+      </a-ring>
+    </a-entity>
+
+    <!-- ── URANO ── raio 2.45 -->
+    <a-entity id="orb-urano" position="0 1.0 0"
+      animation="property:rotation; to:0 360 0; loop:true; dur:30000; easing:linear">
+      <a-sphere class="planeta" id="urano" position="2.45 0 0" radius="0.12"
+        mixin="brilho-verde">
+      </a-sphere>
+      <!-- anel de Urano (inclinado) -->
+      <a-ring position="2.45 0 0" rotation="10 0 0"
+        radius-inner="0.14" radius-outer="0.18"
+        material="color:#0f9; opacity:0.45; transparent:true; emissive:#0f9; emissiveIntensity:0.4">
+      </a-ring>
+    </a-entity>
+
+    <!-- ── NETUNO ── raio 2.85 -->
+    <a-entity id="orb-netuno" position="0 1.0 0"
+      animation="property:rotation; to:0 360 0; loop:true; dur:42000; easing:linear">
+      <a-sphere class="planeta" id="netuno" position="2.85 0 0" radius="0.12"
+        mixin="brilho-roxo">
+      </a-sphere>
+    </a-entity>
+
+    <!-- ÓRBITAS (anéis finos no plano y=1.0) -->
+    <a-ring position="0 1.0 0" rotation="-90 0 0" radius-inner="0.54"  radius-outer="0.555" material="color:#fff; opacity:0.08; transparent:true"></a-ring>
+    <a-ring position="0 1.0 0" rotation="-90 0 0" radius-inner="0.74"  radius-outer="0.755" material="color:#fff; opacity:0.08; transparent:true"></a-ring>
+    <a-ring position="0 1.0 0" rotation="-90 0 0" radius-inner="0.99"  radius-outer="1.005" material="color:#fff; opacity:0.08; transparent:true"></a-ring>
+    <a-ring position="0 1.0 0" rotation="-90 0 0" radius-inner="1.29"  radius-outer="1.305" material="color:#fff; opacity:0.08; transparent:true"></a-ring>
+    <a-ring position="0 1.0 0" rotation="-90 0 0" radius-inner="1.64"  radius-outer="1.655" material="color:#fff; opacity:0.08; transparent:true"></a-ring>
+    <a-ring position="0 1.0 0" rotation="-90 0 0" radius-inner="2.04"  radius-outer="2.055" material="color:#fff; opacity:0.08; transparent:true"></a-ring>
+    <a-ring position="0 1.0 0" rotation="-90 0 0" radius-inner="2.44"  radius-outer="2.445" material="color:#fff; opacity:0.08; transparent:true"></a-ring>
+    <a-ring position="0 1.0 0" rotation="-90 0 0" radius-inner="2.84"  radius-outer="2.845" material="color:#fff; opacity:0.08; transparent:true"></a-ring>
+
+    <!-- BASE / PLATAFORMA -->
+    <a-cylinder position="0 0.01 0" radius="3.2" height="0.025"
+      material="color:#001133; emissive:#001133; roughness:0.05; metalness:0.95; opacity:0.85; transparent:true">
+    </a-cylinder>
+    <a-ring position="0 0.04 0" rotation="-90 0 0" radius-inner="2.9" radius-outer="3.15"
+      material="color:#0af; opacity:0.15; transparent:true; emissive:#0af; emissiveIntensity:0.5">
+    </a-ring>
+
+    <!-- estrelas decorativas ao redor -->
+    <a-entity id="estrelas"></a-entity>
 
   </a-marker>
 
@@ -150,40 +453,102 @@
 </a-scene>
 
 <script>
-// Sistema de detecção do Marcador (Atualizando HUD e Seta)
-const marker = document.getElementById('marcador-objeto');
-const statusText = document.getElementById('status-text');
-const statusDot = document.getElementById('status-dot');
-const helpArrow = document.getElementById('css-help-arrow');
+// ── Info de cada planeta ──────────────────────────────────
+const info = {
+  sol:      { nome: '☀ Sol',      cor: '#ff0', desc: 'Nossa estrela.\nDiâm: 1,39 M km\nTemp: 5.500 °C' },
+  mercurio: { nome: '☿ Mercúrio', cor: '#aaa', desc: 'Menor planeta.\nÓrbita: 88 dias\nTemp: 430 °C' },
+  venus:    { nome: '♀ Vênus',   cor: '#f70', desc: 'Mais quente.\nÓrbita: 225 dias\nTemp: 465 °C' },
+  terra:    { nome: '⊕ Terra',   cor: '#0af', desc: 'Nosso lar.\nÓrbita: 365 dias\n1 Lua' },
+  marte:    { nome: '♂ Marte',   cor: '#f44', desc: 'Planeta vermelho.\nÓrbita: 687 dias\n2 luas' },
+  jupiter:  { nome: '♃ Júpiter', cor: '#c8a060', desc: 'O maior.\nÓrbita: 12 anos\n95 luas' },
+  saturno:  { nome: '♄ Saturno', cor: '#e8c87c', desc: 'Com anéis.\nÓrbita: 29 anos\n146 luas' },
+  urano:    { nome: '⛢ Urano',  cor: '#0f9', desc: 'Girado 98°.\nÓrbita: 84 anos\n28 luas' },
+  netuno:   { nome: '♆ Netuno', cor: '#c4f', desc: 'Ventos 2.100 km/h.\nÓrbita: 165 anos\n16 luas' },
+};
 
+let totalCliques = 0;
+
+// cliques nos planetas
+document.querySelector('a-scene').addEventListener('loaded', () => {
+
+  Object.keys(info).forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+
+    el.addEventListener('click', () => {
+      totalCliques++;
+      document.getElementById('n-cliques').textContent = totalCliques;
+
+      const d = info[id];
+
+      // painel lateral
+      const panel = document.getElementById('info-panel');
+      document.getElementById('info-nome').textContent = d.nome;
+      document.getElementById('info-nome').style.color = d.cor;
+      document.getElementById('info-desc').textContent = d.desc;
+      panel.classList.add('visible');
+
+      // pulso de escala
+      const s = parseFloat(el.getAttribute('radius') || 0.1);
+      el.setAttribute('animation__click', {
+        property: 'scale',
+        from: '1 1 1',
+        to: '1.4 1.4 1.4',
+        dur: 200,
+        dir: 'alternate',
+        loop: 1,
+        easing: 'easeOutQuad'
+      });
+
+      // toast
+      showToast(d.nome, d.cor);
+    });
+  });
+
+  // estrelas decorativas
+  const c = document.getElementById('estrelas');
+  for (let i = 0; i < 30; i++) {
+    const s = document.createElement('a-sphere');
+    const ang = Math.random() * Math.PI * 2;
+    const r   = 3.5 + Math.random() * 1.5;
+    const h   = 0.5 + Math.random() * 2.0;
+    s.setAttribute('position', `${Math.cos(ang)*r} ${h} ${Math.sin(ang)*r}`);
+    s.setAttribute('radius', (0.015 + Math.random() * 0.025).toFixed(3));
+    const cores = ['#fff','#ffd','#adf','#faf'];
+    const cor = cores[Math.floor(Math.random()*cores.length)];
+    s.setAttribute('material', `color:${cor}; emissive:${cor}; emissiveIntensity:1; opacity:${(0.4+Math.random()*0.6).toFixed(2)}`);
+    s.setAttribute('animation', `property:scale; to:1.5 1.5 1.5; loop:true; dur:${800+Math.random()*1200}; dir:alternate; easing:easeInOutSine`);
+    c.appendChild(s);
+  }
+});
+
+// ── Marcador ──────────────────────────────────────────────
+const marker = document.getElementById('marker');
 marker.addEventListener('markerFound', () => {
-  // Objeto encontrado
-  statusText.textContent = 'OBJETO DETECTADO! OLHE NA TELA';
-  statusText.style.color = '#00ff88';
-  statusDot.classList.add('active');
-  // Esconde a seta de ajuda CSS
-  helpArrow.style.opacity = '0';
-  setTimeout(()=> helpArrow.style.display = 'none', 500);
+  document.getElementById('status-txt').textContent = 'SISTEMA SOLAR ATIVO ✓';
+  document.getElementById('status-txt').parentElement.querySelector('.led').style.background = '#0f9';
 });
-
 marker.addEventListener('markerLost', () => {
-  // Perdeu o objeto
-  statusText.textContent = 'CADE O OBJETO DE REFERÊNCIA?';
-  statusText.style.color = '#ff4444';
-  statusDot.classList.remove('active');
-  // Mostra a seta de ajuda CSS
-  helpArrow.style.display = 'block';
-  setTimeout(()=> helpArrow.style.opacity = '1', 10);
+  document.getElementById('status-txt').textContent = 'AGUARDANDO MARCADOR';
+  document.getElementById('status-txt').parentElement.querySelector('.led').style.background = '#0af';
+  document.getElementById('info-panel').classList.remove('visible');
 });
 
-// Toast Notifications
-function showToast(msg) {
+// ── Toast ─────────────────────────────────────────────────
+function showToast(msg, cor) {
   const t = document.getElementById('toast');
   t.textContent = msg;
+  t.style.color = cor || '#ff0';
+  t.style.textShadow = `0 0 20px ${cor || '#ff0'}`;
   t.classList.remove('show');
-  void t.offsetWidth; // Força reflow
+  void t.offsetWidth;
   t.classList.add('show');
 }
+
+// ── Splash ────────────────────────────────────────────────
+setTimeout(() => {
+  document.getElementById('splash').classList.add('out');
+}, 3000);
 </script>
 </body>
 </html>
