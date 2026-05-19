@@ -30,20 +30,28 @@
       width: 100%; height: 100%;
       overflow: hidden;
       font-family: 'JetBrains Mono', monospace;
-      background: transparent;
+      background: transparent !important;
+      background-color: transparent !important;
       color: var(--azul);
     }
 
-    /* ── CÂMERA DE FUNDO (Modo 360 livre) ── */
+    /* ── CÂMERA DE FUNDO (Garantida para o Chrome) ── */
     #bg-video {
-      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      position: fixed; top: 0; left: 0; 
+      width: 100% !important; height: 100% !important;
       object-fit: cover; z-index: 1;
+      background: transparent !important;
     }
 
-    /* ── CENA AR (Fica transparente por cima do vídeo) ── */
-    #scene-container { position: fixed; inset: 0; z-index: 2; pointer-events: none; }
-    /* A-scene deve interceptar cliques */
-    a-scene { width: 100%; height: 100%; pointer-events: auto; }
+    /* ── CENA AR ── */
+    #scene-container { position: fixed; inset: 0; z-index: 2; pointer-events: none; background: transparent !important; }
+    a-scene { width: 100%; height: 100%; pointer-events: auto; background: transparent !important; }
+
+    /* Força transparência total em todas as camadas do A-Frame no Chrome */
+    a-scene, a-scene canvas {
+      background: transparent !important;
+      background-color: transparent !important;
+    }
 
     /* ── SPLASH ── */
     #splash {
@@ -53,7 +61,7 @@
       align-items: center; justify-content: center;
       gap: 1.6rem;
       transition: opacity 0.7s;
-      pointer-events: auto; /* Permite clique no botão */
+      pointer-events: auto;
     }
     #splash.out { opacity: 0; pointer-events: none; }
 
@@ -80,7 +88,6 @@
       text-transform: uppercase;
     }
 
-    /* NOVO BOTÃO DE INÍCIO (Necessário para iOS autorizar câmera/giroscópio) */
     #btn-iniciar {
       margin-top: 20px;
       padding: 12px 24px;
@@ -96,11 +103,8 @@
     }
     #btn-iniciar:active { background: var(--azul); color: #000; }
 
-    /* ── HUD (Mantido o design do grupo) ── */
-    #hud {
-      position: fixed; inset: 0; z-index: 100;
-      pointer-events: none;
-    }
+    /* ── HUD ── */
+    #hud { position: fixed; inset: 0; z-index: 100; pointer-events: none; }
 
     .c { position: absolute; width: 32px; height: 32px; border-color: rgba(0,170,255,0.55); border-style: solid; }
     .c.tl { top: 14px; left: 14px; border-width: 2px 0 0 2px; border-radius: 4px 0 0 0; }
@@ -109,57 +113,29 @@
     .c.br { bottom: 14px; right: 14px; border-width: 0 2px 2px 0; border-radius: 0 0 4px 0; }
 
     #status {
-      position: absolute;
-      top: 22px; left: 50%; transform: translateX(-50%);
-      background: rgba(0,0,0,0.55);
-      border: 1px solid rgba(0,170,255,0.25);
-      border-radius: 30px;
-      padding: 5px 20px;
-      font-size: 0.58rem;
-      letter-spacing: 0.22em;
-      text-transform: uppercase;
-      backdrop-filter: blur(8px);
-      display: flex; align-items: center; gap: 8px;
+      position: absolute; top: 22px; left: 50%; transform: translateX(-50%);
+      background: rgba(0,0,0,0.55); border: 1px solid rgba(0,170,255,0.25);
+      border-radius: 30px; padding: 5px 20px; font-size: 0.58rem;
+      letter-spacing: 0.22em; text-transform: uppercase;
+      backdrop-filter: blur(8px); display: flex; align-items: center; gap: 8px;
     }
-    .led {
-      width: 7px; height: 7px; border-radius: 50%;
-      background: #0f9; /* Verde por padrão no modo livre */
-      animation: blink 1.1s step-start infinite;
-    }
+    .led { width: 7px; height: 7px; border-radius: 50%; background: #0f9; animation: blink 1.1s step-start infinite; }
     @keyframes blink { 50% { opacity: 0; } }
 
     #info-panel {
-      position: absolute;
-      top: 50%; left: 16px; transform: translateY(-50%);
-      background: rgba(0,0,0,0.6);
-      border: 1px solid rgba(0,170,255,0.2);
-      border-radius: 14px;
-      padding: 14px 12px;
-      backdrop-filter: blur(10px);
-      min-width: 130px;
-      transition: all 0.3s;
-      display: none;
+      position: absolute; top: 50%; left: 16px; transform: translateY(-50%);
+      background: rgba(0,0,0,0.6); border: 1px solid rgba(0,170,255,0.2);
+      border-radius: 14px; padding: 14px 12px; backdrop-filter: blur(10px);
+      min-width: 130px; transition: all 0.3s; display: none;
     }
     #info-panel.visible { display: block; }
-    #info-nome {
-      font-family: 'Exo 2', sans-serif;
-      font-weight: 700;
-      font-size: 1rem;
-      margin-bottom: 6px;
-      color: var(--azul);
-    }
-    /* CORREÇÃO DO \n */
+    #info-nome { font-family: 'Exo 2', sans-serif; font-weight: 700; font-size: 1rem; margin-bottom: 6px; color: var(--azul); }
     #info-desc { font-size: 0.58rem; line-height: 1.7; color: rgba(255,255,255,0.7); white-space: pre-wrap; }
 
     #toast {
-      position: absolute;
-      top: 45%; left: 50%; transform: translate(-50%, -50%);
-      font-family: 'Exo 2', sans-serif;
-      font-weight: 700;
-      font-size: clamp(1rem, 4vw, 1.4rem);
-      letter-spacing: 0.2em;
-      pointer-events: none;
-      opacity: 0;
+      position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%);
+      font-family: 'Exo 2', sans-serif; font-weight: 700; font-size: clamp(1rem, 4vw, 1.4rem);
+      letter-spacing: 0.2em; pointer-events: none; opacity: 0;
     }
     #toast.show { animation: toastUp 1.1s ease forwards; }
     @keyframes toastUp {
@@ -168,76 +144,37 @@
       100% { opacity: 0; transform: translate(-50%, -110%) scale(0.95); }
     }
 
-    #cliques {
-      position: absolute;
-      top: 22px; right: 16px;
-      background: rgba(0,0,0,0.5);
-      border: 1px solid rgba(0,170,255,0.2);
-      border-radius: 30px;
-      padding: 5px 16px;
-      font-size: 0.58rem;
-      letter-spacing: 0.18em;
-      backdrop-filter: blur(8px);
-    }
-
-    #instrucoes {
-      position: absolute;
-      bottom: 22px; left: 50%; transform: translateX(-50%);
-      display: flex; gap: 8px;
-      pointer-events: auto;
-    }
-    .inst {
-      background: rgba(0,0,0,0.55);
-      border: 1px solid rgba(0,170,255,0.2);
-      border-radius: 12px;
-      padding: 9px 12px;
-      text-align: center;
-      backdrop-filter: blur(8px);
-      min-width: 72px;
-    }
+    #cliques { position: absolute; top: 22px; right: 16px; background: rgba(0,0,0,0.5); border: 1px solid rgba(0,170,255,0.2); border-radius: 30px; padding: 5px 16px; font-size: 0.58rem; letter-spacing: 0.18em; backdrop-filter: blur(8px); }
+    #instrucoes { position: absolute; bottom: 22px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; pointer-events: auto; }
+    .inst { background: rgba(0,0,0,0.55); border: 1px solid rgba(0,170,255,0.2); border-radius: 12px; padding: 9px 12px; text-align: center; backdrop-filter: blur(8px); min-width: 72px; }
     .inst-i { font-size: 1.3rem; display: block; margin-bottom: 3px; }
     .inst-l { font-size: 0.5rem; letter-spacing: 0.1em; color: rgba(0,170,255,0.65); text-transform: uppercase; line-height: 1.5; }
 
-    /* scanlines sutis */
-    #scan {
-      position: fixed; inset: 0; z-index: 50;
-      background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.04) 3px, rgba(0,0,0,0.04) 4px);
-      pointer-events: none;
-    }
-
-    /* Mira central para ajudar a clicar sem o celular pular */
-    #mira {
-      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      width: 12px; height: 12px; border: 2px solid rgba(0,170,255,0.6);
-      border-radius: 50%; pointer-events: none; z-index: 101;
-    }
+    #scan { position: fixed; inset: 0; z-index: 50; background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.04) 3px, rgba(0,0,0,0.04) 4px); pointer-events: none; }
+    #mira { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 12px; height: 12px; border: 2px solid rgba(0,170,255,0.6); border-radius: 50%; pointer-events: none; z-index: 101; }
   </style>
 </head>
 <body>
 
-<video id="bg-video" autoplay playsinline muted></video>
+<video id="bg-video" autoplay playsinline webkit-playsinline muted loop></video>
 
 <div id="splash">
   <div class="logo">COSMOS AR</div>
   <div class="tagline">Sistema Solar Interativo 360º</div>
-  
   <p style="color: rgba(255,255,255,0.5); font-size: 0.8rem; text-align: center; max-width: 80%;">
-    Olhe ao seu redor para explorar os planetas.
+    Mova o celular para explorar o espaço ao seu redor.
   </p>
-  
-  <button id="btn-iniciar">Iniciar Câmera e Sensor</button>
+  <button id="btn-iniciar">Iniciar Universo</button>
 </div>
 
 <div id="scan"></div>
 
 <div id="hud">
   <div id="mira"></div>
-
   <div class="c tl"></div><div class="c tr"></div>
   <div class="c bl"></div><div class="c br"></div>
 
   <div id="status"><div class="led"></div><span id="status-txt">SISTEMA ATIVO</span></div>
-  
   <div id="cliques">TOQUES: <span id="n-cliques">0</span></div>
   <div id="toast"></div>
 
@@ -256,7 +193,7 @@
 <div id="scene-container">
   <a-scene
     embedded
-    background="alpha: true; antialias: true;"
+    renderer="alpha: true; antialias: true; colorManagement: true;"
     cursor="rayOrigin: mouse"
     raycaster="objects: .planeta"
     vr-mode-ui="enabled: false">
@@ -310,7 +247,6 @@
 </div>
 
 <script>
-// ── Info de cada planeta (Com a correção do \n em andamento no HTML/CSS) ──
 const info = {
   sol:      { nome: '☀ Sol',      cor: '#ff0', desc: 'Nossa estrela.\nDiâm: 1,39 M km\nTemp: 5.500 °C' },
   mercurio: { nome: '☿ Mercúrio', cor: '#aaa', desc: 'Menor planeta.\nÓrbita: 88 dias\nTemp: 430 °C' },
@@ -325,9 +261,7 @@ const info = {
 
 let totalCliques = 0;
 
-// Configuração dos planetas
 document.querySelector('a-scene').addEventListener('loaded', () => {
-
   Object.keys(info).forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
@@ -337,31 +271,21 @@ document.querySelector('a-scene').addEventListener('loaded', () => {
       document.getElementById('n-cliques').textContent = totalCliques;
 
       const d = info[id];
-
-      // painel lateral
       const panel = document.getElementById('info-panel');
       document.getElementById('info-nome').textContent = d.nome;
       document.getElementById('info-nome').style.color = d.cor;
       document.getElementById('info-desc').textContent = d.desc.replace(/\\n/g, '\n');
       panel.classList.add('visible');
 
-      // pulso de escala
       el.setAttribute('animation__click', {
-        property: 'scale',
-        from: '1 1 1',
-        to: '1.4 1.4 1.4',
-        dur: 200,
-        dir: 'alternate',
-        loop: 1,
-        easing: 'easeOutQuad'
+        property: 'scale', from: '1 1 1', to: '1.4 1.4 1.4',
+        dur: 200, dir: 'alternate', loop: 1, easing: 'easeOutQuad'
       });
 
-      // toast
       showToast(d.nome, d.cor);
     });
   });
 
-  // estrelas decorativas
   const c = document.getElementById('estrelas');
   for (let i = 0; i < 30; i++) {
     const s = document.createElement('a-sphere');
@@ -378,7 +302,6 @@ document.querySelector('a-scene').addEventListener('loaded', () => {
   }
 });
 
-// ── Toast ─────────────────────────────────────────────────
 function showToast(msg, cor) {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -389,33 +312,37 @@ function showToast(msg, cor) {
   t.classList.add('show');
 }
 
-// ── INICIALIZAÇÃO iOS (Câmera + Giroscópio) ────────────────
+// Inicialização segura corrigida para o Chrome Mobile
 document.getElementById('btn-iniciar').addEventListener('click', async () => {
   const splash = document.getElementById('splash');
+  const video = document.getElementById('bg-video');
   
   try {
-    // 1. Pede permissão do Giroscópio
     if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
       const permissionState = await DeviceOrientationEvent.requestPermission();
       if (permissionState !== 'granted') {
-        alert("Acesso ao sensor negado.");
+        alert("Acesso aos sensores de movimento negado.");
         return;
       }
     }
 
-    // 2. Pede permissão da Câmera
-    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-    const video = document.getElementById('bg-video');
+    // CORREÇÃO DO TRAVAMENTO: Parâmetros "ideal" corrigidos para inglês estrito
+    const stream = await navigator.mediaDevices.getUserMedia({ 
+      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } 
+    });
+    
     video.srcObject = stream;
     
-    // Esconde a tela de Splash
+    // Força o gatilho de execução no Chrome do iOS
+    video.play().catch(e => console.log("Aviso de autoplay controlado:", e));
+
     splash.classList.add('out');
 
   } catch (erro) {
-    alert("Erro ao iniciar a câmera: " + erro.message);
+    alert("Nota de permissão: " + erro.message);
+    splash.classList.add('out');
   }
 });
-
 </script>
 </body>
 </html>
