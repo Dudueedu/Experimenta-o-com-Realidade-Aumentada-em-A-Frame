@@ -13,9 +13,7 @@
 
   <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
 
-  <!-- versões estáveis e testadas -->
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
 
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -32,17 +30,20 @@
       width: 100%; height: 100%;
       overflow: hidden;
       font-family: 'JetBrains Mono', monospace;
-      background: transparent;
+      background: #000;
       color: var(--azul);
     }
 
-    /* ── cena AR ocupa toda a tela ── */
-    a-scene {
-      position: fixed !important;
-      top: 0; left: 0;
-      width: 100% !important;
-      height: 100% !important;
+    /* ── CÂMERA DE FUNDO (Modo 360 livre) ── */
+    #bg-video {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      object-fit: cover; z-index: 1;
     }
+
+    /* ── CENA AR (Fica transparente por cima do vídeo) ── */
+    #scene-container { position: fixed; inset: 0; z-index: 2; pointer-events: none; }
+    /* A-scene deve interceptar cliques */
+    a-scene { width: 100%; height: 100%; pointer-events: auto; }
 
     /* ── SPLASH ── */
     #splash {
@@ -52,6 +53,7 @@
       align-items: center; justify-content: center;
       gap: 1.6rem;
       transition: opacity 0.7s;
+      pointer-events: auto; /* Permite clique no botão */
     }
     #splash.out { opacity: 0; pointer-events: none; }
 
@@ -78,70 +80,28 @@
       text-transform: uppercase;
     }
 
-    .marker-hint {
-      display: flex; flex-direction: column; align-items: center; gap: 1rem;
-      margin-top: 0.5rem;
-    }
-
-    /* quadrado animado representando o marcador */
-    .marker-box {
-      width: 110px; height: 110px;
-      border: 3px solid rgba(0,170,255,0.4);
+    /* NOVO BOTÃO DE INÍCIO (Necessário para iOS autorizar câmera/giroscópio) */
+    #btn-iniciar {
+      margin-top: 20px;
+      padding: 12px 24px;
+      background: rgba(0, 170, 255, 0.2);
+      border: 1px solid var(--azul);
+      color: var(--azul);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1rem;
+      text-transform: uppercase;
       border-radius: 8px;
-      position: relative;
-      display: flex; align-items: center; justify-content: center;
-      animation: scanPulse 1.8s ease-in-out infinite;
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(0,170,255,0.3);
     }
-    @keyframes scanPulse {
-      0%, 100% { border-color: rgba(0,170,255,0.3); box-shadow: inset 0 0 0 rgba(0,170,255,0); }
-      50%       { border-color: rgba(0,170,255,0.9); box-shadow: inset 0 0 20px rgba(0,170,255,0.15); }
-    }
-    .marker-box::before,
-    .marker-box::after {
-      content: '';
-      position: absolute;
-      width: 28px; height: 28px;
-      border-color: var(--azul);
-      border-style: solid;
-    }
-    .marker-box::before { top: -3px; left: -3px; border-width: 3px 0 0 3px; border-radius: 6px 0 0 0; }
-    .marker-box::after  { bottom: -3px; right: -3px; border-width: 0 3px 3px 0; border-radius: 0 0 6px 0; }
+    #btn-iniciar:active { background: var(--azul); color: #000; }
 
-    /* imagem do marcador Hiro dentro da caixa */
-    .marker-img {
-      width: 80px; height: 80px;
-      object-fit: contain;
-      opacity: 0.85;
-      filter: invert(1) sepia(1) saturate(4) hue-rotate(175deg);
-    }
-
-    .hint-text {
-      font-size: 0.62rem;
-      letter-spacing: 0.2em;
-      color: rgba(0,170,255,0.6);
-      text-align: center;
-    }
-
-    .bar-wrap {
-      width: 200px; height: 2px;
-      background: rgba(0,170,255,0.12);
-      border-radius: 2px;
-      overflow: hidden;
-    }
-    .bar-fill {
-      height: 100%;
-      background: linear-gradient(90deg, #0af, #c4f);
-      animation: load 2.8s ease forwards;
-    }
-    @keyframes load { from { width: 0; } to { width: 100%; } }
-
-    /* ── HUD ── */
+    /* ── HUD (Mantido o design do grupo) ── */
     #hud {
       position: fixed; inset: 0; z-index: 100;
       pointer-events: none;
     }
 
-    /* cantos */
     .c { position: absolute; width: 32px; height: 32px; border-color: rgba(0,170,255,0.55); border-style: solid; }
     .c.tl { top: 14px; left: 14px; border-width: 2px 0 0 2px; border-radius: 4px 0 0 0; }
     .c.tr { top: 14px; right: 14px; border-width: 2px 2px 0 0; border-radius: 0 4px 0 0; }
@@ -163,7 +123,7 @@
     }
     .led {
       width: 7px; height: 7px; border-radius: 50%;
-      background: var(--azul);
+      background: #0f9; /* Verde por padrão no modo livre */
       animation: blink 1.1s step-start infinite;
     }
     @keyframes blink { 50% { opacity: 0; } }
@@ -188,7 +148,8 @@
       margin-bottom: 6px;
       color: var(--azul);
     }
-    #info-desc { font-size: 0.58rem; line-height: 1.7; color: rgba(255,255,255,0.7); }
+    /* CORREÇÃO DO \n */
+    #info-desc { font-size: 0.58rem; line-height: 1.7; color: rgba(255,255,255,0.7); white-space: pre-wrap; }
 
     #toast {
       position: absolute;
@@ -243,43 +204,40 @@
       background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.04) 3px, rgba(0,0,0,0.04) 4px);
       pointer-events: none;
     }
+
+    /* Mira central para ajudar a clicar sem o celular pular */
+    #mira {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      width: 12px; height: 12px; border: 2px solid rgba(0,170,255,0.6);
+      border-radius: 50%; pointer-events: none; z-index: 101;
+    }
   </style>
 </head>
 <body>
 
-<!-- SPLASH -->
+<video id="bg-video" autoplay playsinline muted></video>
+
 <div id="splash">
   <div class="logo">COSMOS AR</div>
-  <div class="tagline">Sistema Solar Interativo</div>
-  <div class="marker-hint">
-    <div class="marker-box">
-      <!-- SVG inline do marcador Hiro simplificado para referência visual -->
-      <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect x="8" y="8" width="64" height="64" fill="white"/>
-        <rect x="16" y="16" width="48" height="48" fill="black"/>
-        <rect x="24" y="24" width="32" height="32" fill="white"/>
-        <rect x="32" y="32" width="16" height="16" fill="black"/>
-        <rect x="16" y="16" width="12" height="12" fill="white"/>
-        <rect x="52" y="16" width="12" height="12" fill="white"/>
-        <rect x="16" y="52" width="12" height="12" fill="white"/>
-        <rect x="20" y="20" width="4" height="4" fill="black"/>
-        <rect x="56" y="20" width="4" height="4" fill="black"/>
-        <rect x="20" y="56" width="4" height="4" fill="black"/>
-      </svg>
-    </div>
-    <div class="hint-text">Aponte para o marcador<br><strong>HIRO</strong> para iniciar</div>
-  </div>
-  <div class="bar-wrap"><div class="bar-fill"></div></div>
+  <div class="tagline">Sistema Solar Interativo 360º</div>
+  
+  <p style="color: rgba(255,255,255,0.5); font-size: 0.8rem; text-align: center; max-width: 80%;">
+    Olhe ao seu redor para explorar os planetas.
+  </p>
+  
+  <button id="btn-iniciar">Iniciar Câmera e Sensor</button>
 </div>
 
 <div id="scan"></div>
 
-<!-- HUD -->
 <div id="hud">
+  <div id="mira"></div>
+
   <div class="c tl"></div><div class="c tr"></div>
   <div class="c bl"></div><div class="c br"></div>
 
-  <div id="status"><div class="led"></div><span id="status-txt">AGUARDANDO MARCADOR</span></div>
+  <div id="status"><div class="led"></div><span id="status-txt">SISTEMA ATIVO</span></div>
+  
   <div id="cliques">TOQUES: <span id="n-cliques">0</span></div>
   <div id="toast"></div>
 
@@ -289,171 +247,70 @@
   </div>
 
   <div id="instrucoes">
-    <div class="inst"><span class="inst-i">🎯</span><span class="inst-l">Marcador<br>HIRO</span></div>
+    <div class="inst"><span class="inst-i">🔄</span><span class="inst-l">Olhe ao<br>Redor</span></div>
     <div class="inst"><span class="inst-i">👆</span><span class="inst-l">Toque nos<br>planetas</span></div>
     <div class="inst"><span class="inst-i">🪐</span><span class="inst-l">Descubra<br>o sistema</span></div>
   </div>
 </div>
 
-<!-- CENA AR -->
-<a-scene
-  embedded
-  arjs="sourceType: webcam; debugUIEnabled: false; trackingMethod: best; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
-  cursor="rayOrigin: mouse"
-  raycaster="objects: .planeta"
-  renderer="antialias: true; alpha: true"
-  vr-mode-ui="enabled: false"
-  style="width:100%;height:100vh;">
+<div id="scene-container">
+  <a-scene
+    embedded
+    background="transparent"
+    cursor="rayOrigin: mouse"
+    raycaster="objects: .planeta"
+    vr-mode-ui="enabled: false">
 
-  <a-assets>
-    <!-- cores como materiais nomeados -->
-    <a-mixin id="brilho-azul"   material="color:#0af; emissive:#0af; emissiveIntensity:0.4; roughness:0.2; metalness:0.6"></a-mixin>
-    <a-mixin id="brilho-laranja" material="color:#f70; emissive:#f70; emissiveIntensity:0.5; roughness:0.3; metalness:0.5"></a-mixin>
-    <a-mixin id="brilho-verde"  material="color:#0f9; emissive:#0f9; emissiveIntensity:0.4; roughness:0.25; metalness:0.55"></a-mixin>
-    <a-mixin id="brilho-roxo"   material="color:#c4f; emissive:#c4f; emissiveIntensity:0.4; roughness:0.2; metalness:0.6"></a-mixin>
-    <a-mixin id="brilho-amarelo" material="color:#ff0; emissive:#ff0; emissiveIntensity:0.5; roughness:0.1; metalness:0.7"></a-mixin>
-    <a-mixin id="brilho-vermelho" material="color:#f44; emissive:#f44; emissiveIntensity:0.45; roughness:0.3; metalness:0.5"></a-mixin>
-  </a-assets>
+    <a-entity camera look-controls="sensorMode: custom" position="0 1.6 0"></a-entity>
 
-  <a-marker preset="hiro" id="marker">
+    <a-assets>
+      <a-mixin id="brilho-azul"   material="color:#0af; emissive:#0af; emissiveIntensity:0.4; roughness:0.2; metalness:0.6"></a-mixin>
+      <a-mixin id="brilho-laranja" material="color:#f70; emissive:#f70; emissiveIntensity:0.5; roughness:0.3; metalness:0.5"></a-mixin>
+      <a-mixin id="brilho-verde"  material="color:#0f9; emissive:#0f9; emissiveIntensity:0.4; roughness:0.25; metalness:0.55"></a-mixin>
+      <a-mixin id="brilho-roxo"   material="color:#c4f; emissive:#c4f; emissiveIntensity:0.4; roughness:0.2; metalness:0.6"></a-mixin>
+      <a-mixin id="brilho-amarelo" material="color:#ff0; emissive:#ff0; emissiveIntensity:0.5; roughness:0.1; metalness:0.7"></a-mixin>
+      <a-mixin id="brilho-vermelho" material="color:#f44; emissive:#f44; emissiveIntensity:0.45; roughness:0.3; metalness:0.5"></a-mixin>
+    </a-assets>
 
-    <!-- ★ SOL central ★ -->
     <a-sphere
-      id="sol"
-      class="planeta"
-      position="0 1.0 0"
-      radius="0.28"
-      mixin="brilho-amarelo"
+      id="sol" class="planeta" position="0 2 -6" radius="0.6" mixin="brilho-amarelo"
       animation="property:rotation; to:0 360 0; loop:true; dur:5000; easing:linear">
+      <a-sphere radius="0.75" color="#ff0" material="opacity:0.15; transparent:true; emissive:#ff0; emissiveIntensity:1; side:back" animation="property:scale; to:1.1 1.1 1.1; loop:true; dur:1600; dir:alternate; easing:easeInOutSine"></a-sphere>
     </a-sphere>
 
-    <!-- corona do sol (esfera glow maior semitransparente) -->
-    <a-sphere position="0 1.0 0" radius="0.36" color="#ff0"
-      material="opacity:0.12; transparent:true; emissive:#ff0; emissiveIntensity:1; side:back"
-      animation="property:scale; to:1.12 1.12 1.12; loop:true; dur:1600; dir:alternate; easing:easeInOutSine">
-    </a-sphere>
+    <a-sphere class="planeta" id="mercurio" position="2 1.5 -4" radius="0.15" material="color:#aaa; emissive:#888; emissiveIntensity:0.3; roughness:0.5; metalness:0.6" animation="property:rotation; to:0 360 0; loop:true; dur:2500; easing:linear"></a-sphere>
 
-    <!-- ── MERCÚRIO ── raio órbita 0.55 -->
-    <a-entity id="orb-mercurio" position="0 1.0 0"
-      animation="property:rotation; to:0 360 0; loop:true; dur:2500; easing:linear">
-      <a-sphere class="planeta" id="mercurio" position="0.55 0 0" radius="0.07"
-        material="color:#aaa; emissive:#888; emissiveIntensity:0.3; roughness:0.5; metalness:0.6">
-      </a-sphere>
-    </a-entity>
+    <a-sphere class="planeta" id="venus" position="4 2 0" radius="0.2" mixin="brilho-laranja" animation="property:rotation; to:0 360 0; loop:true; dur:3800; easing:linear"></a-sphere>
 
-    <!-- ── VÊNUS ── raio 0.75 -->
-    <a-entity id="orb-venus" position="0 1.0 0"
-      animation="property:rotation; to:0 360 0; loop:true; dur:3800; easing:linear">
-      <a-sphere class="planeta" id="venus" position="0.75 0 0" radius="0.1"
-        mixin="brilho-laranja">
-      </a-sphere>
-    </a-entity>
-
-    <!-- ── TERRA ── raio 1.0 -->
-    <a-entity id="orb-terra" position="0 1.0 0"
-      animation="property:rotation; to:0 360 0; loop:true; dur:5500; easing:linear">
-      <a-sphere class="planeta" id="terra" position="1.0 0 0" radius="0.11"
-        mixin="brilho-azul">
-      </a-sphere>
-      <!-- Lua -->
-      <a-entity position="1.0 0 0"
-        animation="property:rotation; to:0 360 0; loop:true; dur:1400; easing:linear">
-        <a-sphere position="0.2 0 0" radius="0.035"
-          material="color:#ccc; emissive:#aaa; emissiveIntensity:0.2; roughness:0.8">
-        </a-sphere>
+    <a-sphere class="planeta" id="terra" position="3 1 4" radius="0.25" mixin="brilho-azul" animation="property:rotation; to:0 360 0; loop:true; dur:5500; easing:linear">
+      <a-entity animation="property:rotation; to:0 360 0; loop:true; dur:1400; easing:linear">
+        <a-sphere position="0.45 0 0" radius="0.06" material="color:#ccc; emissive:#aaa; emissiveIntensity:0.2; roughness:0.8"></a-sphere>
       </a-entity>
-    </a-entity>
+    </a-sphere>
 
-    <!-- ── MARTE ── raio 1.3 -->
-    <a-entity id="orb-marte" position="0 1.0 0"
-      animation="property:rotation; to:0 360 0; loop:true; dur:8200; easing:linear">
-      <a-sphere class="planeta" id="marte" position="1.3 0 0" radius="0.09"
-        mixin="brilho-vermelho">
-      </a-sphere>
-    </a-entity>
+    <a-sphere class="planeta" id="marte" position="0 1.6 5" radius="0.18" mixin="brilho-vermelho" animation="property:rotation; to:0 360 0; loop:true; dur:8200; easing:linear"></a-sphere>
 
-    <!-- ── JÚPITER ── raio 1.65, tem anéis -->
-    <a-entity id="orb-jupiter" position="0 1.0 0"
-      animation="property:rotation; to:0 360 0; loop:true; dur:14000; easing:linear">
-      <a-sphere class="planeta" id="jupiter" position="1.65 0 0" radius="0.19"
-        material="color:#c8a060; emissive:#a07030; emissiveIntensity:0.35; roughness:0.4; metalness:0.4">
-      </a-sphere>
-      <!-- Faixas de Júpiter (anéis horizontais) -->
-      <a-ring position="1.65 0 0" rotation="90 0 0"
-        radius-inner="0.20" radius-outer="0.21"
-        material="color:#a07030; opacity:0.6; transparent:true; emissive:#a07030; emissiveIntensity:0.5">
-      </a-ring>
-    </a-entity>
+    <a-sphere class="planeta" id="jupiter" position="-4 3 3" radius="0.4" material="color:#c8a060; emissive:#a07030; emissiveIntensity:0.35; roughness:0.4; metalness:0.4" animation="property:rotation; to:0 360 0; loop:true; dur:14000; easing:linear">
+      <a-ring rotation="90 0 0" radius-inner="0.42" radius-outer="0.44" material="color:#a07030; opacity:0.6; transparent:true; emissive:#a07030; emissiveIntensity:0.5"></a-ring>
+    </a-sphere>
 
-    <!-- ── SATURNO ── raio 2.05, com anéis prominentes -->
-    <a-entity id="orb-saturno" position="0 1.0 0"
-      animation="property:rotation; to:0 360 0; loop:true; dur:20000; easing:linear">
-      <a-sphere class="planeta" id="saturno" position="2.05 0 0" radius="0.16"
-        material="color:#e8c87c; emissive:#b09040; emissiveIntensity:0.35; roughness:0.35; metalness:0.45">
-      </a-sphere>
-      <!-- anel interno -->
-      <a-ring position="2.05 0.015 0" rotation="80 0 0"
-        radius-inner="0.19" radius-outer="0.30"
-        material="color:#e8c87c; opacity:0.55; transparent:true; emissive:#b09040; emissiveIntensity:0.3"
-        animation="property:rotation; to:440 0 0; loop:true; dur:12000; easing:linear">
-      </a-ring>
-      <!-- anel externo -->
-      <a-ring position="2.05 0.015 0" rotation="80 10 0"
-        radius-inner="0.31" radius-outer="0.40"
-        material="color:#c8a050; opacity:0.3; transparent:true; emissive:#906020; emissiveIntensity:0.2"
-        animation="property:rotation; to:440 10 0; loop:true; dur:12000; easing:linear">
-      </a-ring>
-    </a-entity>
+    <a-sphere class="planeta" id="saturno" position="-5 2 0" radius="0.35" material="color:#e8c87c; emissive:#b09040; emissiveIntensity:0.35; roughness:0.35; metalness:0.45" animation="property:rotation; to:0 360 0; loop:true; dur:20000; easing:linear">
+      <a-ring rotation="80 0 0" radius-inner="0.45" radius-outer="0.7" material="color:#e8c87c; opacity:0.55; transparent:true; emissive:#b09040; emissiveIntensity:0.3"></a-ring>
+    </a-sphere>
 
-    <!-- ── URANO ── raio 2.45 -->
-    <a-entity id="orb-urano" position="0 1.0 0"
-      animation="property:rotation; to:0 360 0; loop:true; dur:30000; easing:linear">
-      <a-sphere class="planeta" id="urano" position="2.45 0 0" radius="0.12"
-        mixin="brilho-verde">
-      </a-sphere>
-      <!-- anel de Urano (inclinado) -->
-      <a-ring position="2.45 0 0" rotation="10 0 0"
-        radius-inner="0.14" radius-outer="0.18"
-        material="color:#0f9; opacity:0.45; transparent:true; emissive:#0f9; emissiveIntensity:0.4">
-      </a-ring>
-    </a-entity>
+    <a-sphere class="planeta" id="urano" position="-3 1 -3" radius="0.25" mixin="brilho-verde" animation="property:rotation; to:0 360 0; loop:true; dur:30000; easing:linear">
+      <a-ring rotation="10 0 0" radius-inner="0.3" radius-outer="0.38" material="color:#0f9; opacity:0.45; transparent:true; emissive:#0f9; emissiveIntensity:0.4"></a-ring>
+    </a-sphere>
 
-    <!-- ── NETUNO ── raio 2.85 -->
-    <a-entity id="orb-netuno" position="0 1.0 0"
-      animation="property:rotation; to:0 360 0; loop:true; dur:42000; easing:linear">
-      <a-sphere class="planeta" id="netuno" position="2.85 0 0" radius="0.12"
-        mixin="brilho-roxo">
-      </a-sphere>
-    </a-entity>
+    <a-sphere class="planeta" id="netuno" position="-1.5 3 -5" radius="0.25" mixin="brilho-roxo" animation="property:rotation; to:0 360 0; loop:true; dur:42000; easing:linear"></a-sphere>
 
-    <!-- ÓRBITAS (anéis finos no plano y=1.0) -->
-    <a-ring position="0 1.0 0" rotation="-90 0 0" radius-inner="0.54"  radius-outer="0.555" material="color:#fff; opacity:0.08; transparent:true"></a-ring>
-    <a-ring position="0 1.0 0" rotation="-90 0 0" radius-inner="0.74"  radius-outer="0.755" material="color:#fff; opacity:0.08; transparent:true"></a-ring>
-    <a-ring position="0 1.0 0" rotation="-90 0 0" radius-inner="0.99"  radius-outer="1.005" material="color:#fff; opacity:0.08; transparent:true"></a-ring>
-    <a-ring position="0 1.0 0" rotation="-90 0 0" radius-inner="1.29"  radius-outer="1.305" material="color:#fff; opacity:0.08; transparent:true"></a-ring>
-    <a-ring position="0 1.0 0" rotation="-90 0 0" radius-inner="1.64"  radius-outer="1.655" material="color:#fff; opacity:0.08; transparent:true"></a-ring>
-    <a-ring position="0 1.0 0" rotation="-90 0 0" radius-inner="2.04"  radius-outer="2.055" material="color:#fff; opacity:0.08; transparent:true"></a-ring>
-    <a-ring position="0 1.0 0" rotation="-90 0 0" radius-inner="2.44"  radius-outer="2.445" material="color:#fff; opacity:0.08; transparent:true"></a-ring>
-    <a-ring position="0 1.0 0" rotation="-90 0 0" radius-inner="2.84"  radius-outer="2.845" material="color:#fff; opacity:0.08; transparent:true"></a-ring>
-
-    <!-- BASE / PLATAFORMA -->
-    <a-cylinder position="0 0.01 0" radius="3.2" height="0.025"
-      material="color:#001133; emissive:#001133; roughness:0.05; metalness:0.95; opacity:0.85; transparent:true">
-    </a-cylinder>
-    <a-ring position="0 0.04 0" rotation="-90 0 0" radius-inner="2.9" radius-outer="3.15"
-      material="color:#0af; opacity:0.15; transparent:true; emissive:#0af; emissiveIntensity:0.5">
-    </a-ring>
-
-    <!-- estrelas decorativas ao redor -->
     <a-entity id="estrelas"></a-entity>
 
-  </a-marker>
-
-  <a-entity camera></a-entity>
-</a-scene>
+  </a-scene>
+</div>
 
 <script>
-// ── Info de cada planeta ──────────────────────────────────
+// ── Info de cada planeta (Com a correção do \n em andamento no HTML/CSS) ──
 const info = {
   sol:      { nome: '☀ Sol',      cor: '#ff0', desc: 'Nossa estrela.\nDiâm: 1,39 M km\nTemp: 5.500 °C' },
   mercurio: { nome: '☿ Mercúrio', cor: '#aaa', desc: 'Menor planeta.\nÓrbita: 88 dias\nTemp: 430 °C' },
@@ -468,7 +325,7 @@ const info = {
 
 let totalCliques = 0;
 
-// cliques nos planetas
+// Configuração dos planetas
 document.querySelector('a-scene').addEventListener('loaded', () => {
 
   Object.keys(info).forEach(id => {
@@ -485,11 +342,10 @@ document.querySelector('a-scene').addEventListener('loaded', () => {
       const panel = document.getElementById('info-panel');
       document.getElementById('info-nome').textContent = d.nome;
       document.getElementById('info-nome').style.color = d.cor;
-      document.getElementById('info-desc').textContent = d.desc;
+      document.getElementById('info-desc').textContent = d.desc.replace(/\\n/g, '\n');
       panel.classList.add('visible');
 
       // pulso de escala
-      const s = parseFloat(el.getAttribute('radius') || 0.1);
       el.setAttribute('animation__click', {
         property: 'scale',
         from: '1 1 1',
@@ -510,28 +366,16 @@ document.querySelector('a-scene').addEventListener('loaded', () => {
   for (let i = 0; i < 30; i++) {
     const s = document.createElement('a-sphere');
     const ang = Math.random() * Math.PI * 2;
-    const r   = 3.5 + Math.random() * 1.5;
-    const h   = 0.5 + Math.random() * 2.0;
+    const r   = 4 + Math.random() * 2;
+    const h   = -2 + Math.random() * 6.0;
     s.setAttribute('position', `${Math.cos(ang)*r} ${h} ${Math.sin(ang)*r}`);
-    s.setAttribute('radius', (0.015 + Math.random() * 0.025).toFixed(3));
+    s.setAttribute('radius', (0.02 + Math.random() * 0.03).toFixed(3));
     const cores = ['#fff','#ffd','#adf','#faf'];
     const cor = cores[Math.floor(Math.random()*cores.length)];
     s.setAttribute('material', `color:${cor}; emissive:${cor}; emissiveIntensity:1; opacity:${(0.4+Math.random()*0.6).toFixed(2)}`);
     s.setAttribute('animation', `property:scale; to:1.5 1.5 1.5; loop:true; dur:${800+Math.random()*1200}; dir:alternate; easing:easeInOutSine`);
     c.appendChild(s);
   }
-});
-
-// ── Marcador ──────────────────────────────────────────────
-const marker = document.getElementById('marker');
-marker.addEventListener('markerFound', () => {
-  document.getElementById('status-txt').textContent = 'SISTEMA SOLAR ATIVO ✓';
-  document.getElementById('status-txt').parentElement.querySelector('.led').style.background = '#0f9';
-});
-marker.addEventListener('markerLost', () => {
-  document.getElementById('status-txt').textContent = 'AGUARDANDO MARCADOR';
-  document.getElementById('status-txt').parentElement.querySelector('.led').style.background = '#0af';
-  document.getElementById('info-panel').classList.remove('visible');
 });
 
 // ── Toast ─────────────────────────────────────────────────
@@ -545,10 +389,33 @@ function showToast(msg, cor) {
   t.classList.add('show');
 }
 
-// ── Splash ────────────────────────────────────────────────
-setTimeout(() => {
-  document.getElementById('splash').classList.add('out');
-}, 3000);
+// ── INICIALIZAÇÃO iOS (Câmera + Giroscópio) ────────────────
+document.getElementById('btn-iniciar').addEventListener('click', async () => {
+  const splash = document.getElementById('splash');
+  
+  try {
+    // 1. Pede permissão do Giroscópio
+    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+      const permissionState = await DeviceOrientationEvent.requestPermission();
+      if (permissionState !== 'granted') {
+        alert("Acesso ao sensor negado.");
+        return;
+      }
+    }
+
+    // 2. Pede permissão da Câmera
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    const video = document.getElementById('bg-video');
+    video.srcObject = stream;
+    
+    // Esconde a tela de Splash
+    splash.classList.add('out');
+
+  } catch (erro) {
+    alert("Erro ao iniciar a câmera: " + erro.message);
+  }
+});
+
 </script>
 </body>
 </html>
