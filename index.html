@@ -4,6 +4,49 @@
 # 3. João Vitor Rodrigues Gotardi
 # 4. Pedro Henrique Severino -->
 
+<!--- Cosmos AR
+
+Uma aplicação de Realidade Aumentada (AR) que funciona no navegador mobile. 
+Abre a câmera do celular e sobrepõe o Sistema Solar 3D interativo em cima da imagem real, sem precisar de app instalado.
+
+- A-Frame — biblioteca JavaScript da Mozilla para criar cenas 3D/VR/AR no HTML com tags simples como <a-sphere> e <a-scene>. 
+- Roda sobre WebGL (Three.js por baixo).
+- WebRTC / getUserMedia — API nativa do browser que acessa a câmera do dispositivo. 
+- O vídeo da câmera vai para uma tag <video> que serve de fundo, simulando AR.
+- DeviceOrientationEvent — API nativa que lê o giroscópio/acelerômetro do celular, permitindo que a cena 3D responda ao movimento do aparelho (look-controls).
+- Google Fonts — carrega as fontes Exo 2 e JetBrains Mono para o visual sci-fi.
+
+Estrutura em camadas (z-index)
+z-index 1  →  <video>       câmera real (fundo)
+z-index 2  →  <a-scene>     planetas 3D sobrepostos
+z-index 50 →  #scan         overlay de linhas (efeito visual)
+z-index 100→  #hud          interface (status, painel, botões)
+z-index 9999→ #splash       tela inicial
+
+Fluxo principal
+1. Splash → usuário clica “Iniciar Universo”
+2. Pede permissão de câmera (getUserMedia) e giroscópio (DeviceOrientationEvent.requestPermission — obrigatório no iOS Safari)
+3. Vídeo da câmera é exibido no fundo
+4. Cena A-Frame fica transparente (alpha: true) sobre o vídeo
+5. Usuário move o celular → look-controls rotaciona a câmera virtual
+6. Usuário toca num planeta → raycaster detecta a colisão e exibe o painel de informações
+
+Os planetas
+Cada planeta é um <a-sphere> com:
+• position — coordenadas X Y Z no espaço 3D
+• radius — tamanho proporcional
+• mixin — conjunto reutilizável de materiais (cor, brilho, emissive)
+• animation — rotação contínua em loop:true
+Saturno e Urano têm <a-ring> filho para os anéis. 
+A Terra tem um filho orbitando (a Lua).
+
+Interatividade
+O raycaster do A-Frame projeta um raio a partir do cursor/toque. 
+Quando acerta um elemento com class="planeta", dispara o evento click. O JS então:
+• Exibe o painel lateral com nome e dados do planeta
+• Anima a escala do planeta (efeito de “pulso”)
+• Mostra um toast com o nome e cor do planeta -->
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
